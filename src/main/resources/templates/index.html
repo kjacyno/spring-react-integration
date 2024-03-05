@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>homepage</title>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome to the Homepage</h1>
+    <p>This is a demo of Thymeleaf and frontend framework injecting.</p>
+</div>
+
+<div id="hw"></div>
+<div id="hm"></div>
+<div id="hl"></div>
+<script th:src="@{/webjars/react/18.3.0-next-fecc288b7-20221025/umd/react.production.min.js}"></script>
+<script th:src="@{/webjars/react-dom/18.2.0/umd/react-dom.production.min.js}"></script>
+<script th:src="@{components.js}"></script>
+</body>
+</html>
