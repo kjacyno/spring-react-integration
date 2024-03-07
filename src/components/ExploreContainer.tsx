@@ -1,20 +1,21 @@
 import React, {useEffect, useRef, useState} from 'react';
 import './ExploreContainer.css';
 import {
+
     IonButton,
     IonButtons,
-    IonContent, IonDatetime,
+    IonContent, IonDatetime, IonDatetimeButton,
     IonHeader,
     IonInput,
     IonItem,
     IonLabel,
     IonList,
-    IonModal,
+    IonModal, IonPopover,
     IonTitle,
     IonToolbar
 } from "@ionic/react";
 
-interface ContainerProps {
+type ContainerProps = {
     id: number;
     name: string;
     email: string;
@@ -26,13 +27,16 @@ const ExploreContainer = () => {
     const inputName = useRef<HTMLIonInputElement>(null);
     const inputEmail = useRef<HTMLIonInputElement>(null);
     const modal = useRef<HTMLIonModalElement>(null);
+    const datetime = useRef<null | HTMLIonDatetimeElement>(null);
+    const popover = useRef<HTMLIonPopoverElement>(null)
 
     const [students, setStudents] = useState<ContainerProps[]>([]);
-    const [studentToEdit, setStudentToEdit] = useState<ContainerProps>({
+    const [student, setStudent] = useState<ContainerProps>({
         age: 0, dob: "", email: "", id: 0, name: ""
-    })
-    const [open, setOpen] = useState(false)
-    const [openForm, setOpenForm] = useState(false)
+    });
+    const [open, setOpen] = useState(false);
+    const [openForm, setOpenForm] = useState(false);
+
     useEffect(() => {
         fetch('http://localhost:8080/api/v1/student')
             .then(response => response.json())
@@ -61,11 +65,8 @@ const ExploreContainer = () => {
                     email: email ? email : studentData.email,
                     name: name ? name : studentData.name
                 }
-                console.log(updatedStudent)
 
-                // await fetch(`http://localhost:8080/api/v1/student/${id}?name=${name}&email=${email}`, {
-
-                    await fetch(`http://localhost:8080/api/v1/student/${id}`, {
+                await fetch(`http://localhost:8080/api/v1/student/${id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json"
@@ -77,9 +78,10 @@ const ExploreContainer = () => {
             console.error('error', error)
             throw error
         }
+        setStudent({age: 0, dob: "", email: "", id: 0, name: ""})
     }
 
-    async function confirm(id: number) {
+    async function confirmEdit(id: number) {
         await handleEdit(id)
         fetch('http://localhost:8080/api/v1/student')
             .then(response => response.json())
@@ -88,9 +90,25 @@ const ExploreContainer = () => {
         setOpen(false)
     }
 
+    const confirmClick = () => {
+        datetime.current?.confirm();
+        popover.current?.dismiss();
+    };
+    const confirmForm = async (student: ContainerProps) => {
+        await fetch('http://localhost:8080/api/v1/student', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(student)
+        })
+        console.log(student)
+        modal.current?.dismiss();
+
+    }
     return (
         <><IonList>
-            <IonButton expand="block" onClick={()=>setOpenForm(true)}>Add</IonButton>
+            <IonButton expand="full" onClick={() => setOpenForm(true)}>Add</IonButton>
 
             {students.map(student => (
 
@@ -99,9 +117,9 @@ const ExploreContainer = () => {
                     <IonLabel>{student.dob}</IonLabel>
                     <IonLabel>{student.email}</IonLabel>
                     <IonLabel>{student.age}</IonLabel>
-                    <IonButton expand="block" onClick={() => handleDelete(student.id)}>Delete</IonButton>
-                    <IonButton expand="block" onClick={() => {
-                        setStudentToEdit(student);
+                    <IonButton expand="full" onClick={() => handleDelete(student.id)}>Delete</IonButton>
+                    <IonButton expand="full" onClick={() => {
+                        setStudent(student);
                         setOpen(true)
                     }}>Edit</IonButton>
                 </IonItem>
@@ -112,12 +130,13 @@ const ExploreContainer = () => {
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
                             modal.current?.dismiss();
+                            setStudent({age: 0, dob: "", email: "", id: 0, name: ""})
                             setOpen(false)
                         }}>Cancel</IonButton>
                     </IonButtons>
                     <IonTitle>Edit student details</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton strong={true} onClick={() => confirm(studentToEdit.id)}>
+                        <IonButton strong={true} onClick={() => confirmEdit(student.id)}>
                             Confirm
                         </IonButton>
                     </IonButtons>
@@ -130,7 +149,7 @@ const ExploreContainer = () => {
                         labelPlacement="stacked"
                         ref={inputName}
                         type="text"
-                        placeholder={`${studentToEdit.name}`}/>
+                        placeholder={`${student.name}`}/>
                 </IonItem>
                 <IonItem>
                     <IonInput
@@ -138,25 +157,54 @@ const ExploreContainer = () => {
                         labelPlacement="stacked"
                         ref={inputEmail}
                         type="text"
-                        placeholder={`${studentToEdit.email}`}/>
+                        placeholder={`${student.email}`}/>
                 </IonItem>
             </IonContent>
         </IonModal>
-            <IonModal isOpen={openForm}>
-        <IonList>
-            <IonItem>
-                <IonInput label="Name"></IonInput>
-            </IonItem><IonItem>
-                <IonInput label="Date of birth">
-                    <IonDatetime/>
-                </IonInput>
-            </IonItem><IonItem>
-                <IonInput label="Email"></IonInput>
-            </IonItem>
-        </IonList>
+            <IonModal isOpen={openForm} ref={modal}>
+                <IonList>
+                    <IonItem>
+                        <IonInput label="Name" placeholder="the name of the new student" onIonInput={(e) => setStudent({
+                            ...student,
+                            name: e.detail.value as string
+                        })}></IonInput>
+                    </IonItem>
+                    <IonItem>
+                        <IonLabel>Date of birth</IonLabel>
+                        <IonDatetimeButton datetime="dob"></IonDatetimeButton>
+                    </IonItem>
+                    <IonPopover keepContentsMounted={true} ref={popover}>
+                        <IonDatetime id="dob" presentation="date" onIonChange={(e) => setStudent({
+                            ...student,
+                            dob: e.detail.value as string
+                        })} ref={datetime}>
+                            <IonButtons slot="buttons">
+                                <IonButton slot="end" onClick={confirmClick} color="primary">confirm</IonButton>
+                            </IonButtons>
+                        </IonDatetime>
+                    </IonPopover>
+                    <IonItem>
+                        <IonInput label="Email" placeholder="the email of the new student"
+                                  onIonInput={(e) => setStudent({
+                                      ...student,
+                                      email: e.detail.value as string
+                                  })}></IonInput>
+                    </IonItem>
+                    <IonButtons style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+                        <IonButton onClick={() => {
+                            modal.current?.dismiss();
+                            setOpenForm(false)
+                        }}>Cancel</IonButton>
+
+                        <IonButton strong={true} onClick={() => confirmForm(student)}>
+                            Confirm
+                        </IonButton></IonButtons>
+                </IonList>
+
             </IonModal>
         </>
-    );
+    )
+        ;
 };
 
 export default ExploreContainer;
