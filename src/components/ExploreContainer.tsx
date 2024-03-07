@@ -62,7 +62,10 @@ const ExploreContainer = () => {
                     name: name ? name : studentData.name
                 }
                 console.log(updatedStudent)
-                await fetch(`http://localhost:8080/api/v1/student/${id}`, {
+
+                // await fetch(`http://localhost:8080/api/v1/student/${id}?name=${name}&email=${email}`, {
+
+                    await fetch(`http://localhost:8080/api/v1/student/${id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json"
